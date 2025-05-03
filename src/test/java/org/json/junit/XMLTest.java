@@ -1426,6 +1426,97 @@ public class XMLTest {
         assertEquals(jsonObject3.getJSONObject("color").getString("value"), "008E97");
     }
 
+
+    /**
+     * ===== Test Cases For Milestone 2 =====
+     * test on "JSONObject toJSONObject(Reader reader, JSONPointer path)"
+     * expect return a valid JSONObject
+     */
+
+    // Shared sample XML string used across all tests.
+    private static final String XML_STRING =
+            "<catalog><book>" +
+                    "<author>Gambardella, Matthew</author>" +
+                    "<price>44.95</price>" +
+                    "<genre>Computer</genre>" +
+                    "<description>An in-depth look at creating applications with XML.</description>" +
+                    "<id>bk101</id>" +
+                    "<title>XML Developer's Guide</title>" +
+                    "<publish_date>2000-10-01</publish_date>" +
+                    "</book></catalog>";
+    /**
+     * ===== Test 1 =====
+     * Verifies correct extraction of a sub-object from /catalog/book.
+     * Expected behavior: the <book> element is parsed into a valid JSONObject.
+     */
+    @Test
+    public void testExtractJSONObject() {
+        JSONPointer path = new JSONPointer("/catalog/book");
+
+        JSONObject actual = XML.toJSONObject(new StringReader(XML_STRING), path);
+
+        String expected = "{ \"book\": { " +
+                "\"author\":\"Gambardella, Matthew\"," +
+                "\"price\":44.95," +
+                "\"genre\":\"Computer\"," +
+                "\"description\":\"An in-depth look at creating applications with XML.\"," +
+                "\"id\":\"bk101\"," +
+                "\"title\":\"XML Developer's Guide\"," +
+                "\"publish_date\":\"2000-10-01\" } }";
+
+        Util.compareActualVsExpectedJsonObjects(actual, new JSONObject(expected));
+    }
+    /**
+     * ===== Test 2 =====
+     * Tests replacing the /catalog/book node with a custom JSONObject.
+     * Expected behavior: the entire <book> element is replaced with placeholder values.
+     */
+    @Test
+    public void testReplaceJSONObject() {
+        JSONPointer pointer = new JSONPointer("/catalog/book");
+
+        JSONObject replacement = new JSONObject()
+                .put("author", "Doe, Jane")
+                .put("price", 19.99)
+                .put("genre", "Science Fiction")
+                .put("description", "A thrilling tale set in a post-apocalyptic future.")
+                .put("id", "bk999")
+                .put("title", "The Last Horizon")
+                .put("publish_date", "2025-05-01");
+
+        JSONObject actualResult = XML.toJSONObject(new StringReader(XML_STRING), pointer, replacement);
+
+        String expected = "{\"catalog\":{\"book\":{\"author\":\"Doe, Jane\",\"price\":19.99,\"genre\":\"Science Fiction\",\"description\":\"A thrilling tale set in a post-apocalyptic future.\",\"id\":\"bk999\",\"title\":\"The Last Horizon\",\"publish_date\":\"2025-05-01\"}}}";
+        assertEquals(new JSONObject(expected).toString(), actualResult.toString());
+    }
+
+
+    /**
+     * ===== Test 3 =====
+     * Attempts to replace a non-existent node at /catalog/invalid.
+     * Expected behavior: since the path doesn't exist, the original XML should remain unchanged.
+     */
+    @Test
+    public void testReplaceJSONObjectWithInvalidPath() {
+        JSONPointer pointer = new JSONPointer("/catalog/invalid");
+
+        JSONObject replacement = new JSONObject()
+                .put("author", "Doe, Jane")
+                .put("price", 19.99)
+                .put("genre", "Science Fiction")
+                .put("description", "A thrilling tale set in a post-apocalyptic future.")
+                .put("id", "bk999")
+                .put("title", "The Last Horizon")
+                .put("publish_date", "2025-05-01");
+
+        JSONObject actualResult = XML.toJSONObject(new StringReader(XML_STRING), pointer, replacement);
+
+        String unexpected = "{\"catalog\":{\"book\":{\"author\":\"Doe, Jane\",\"price\":19.99,\"genre\":\"Science Fiction\",\"description\":\"A thrilling tale set in a post-apocalyptic future.\",\"id\":\"bk999\",\"title\":\"The Last Horizon\",\"publish_date\":\"2025-05-01\"}}}";
+        assertNotEquals(new JSONObject(unexpected).toString(), actualResult.toString());
+    }
+
+
+
 }
 
 
