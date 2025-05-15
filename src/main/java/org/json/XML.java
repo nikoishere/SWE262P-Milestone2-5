@@ -1198,4 +1198,79 @@ public class XML {
         System.out.println(result.toString(4));
         return result;
     }
+
+    // Milestone 3:
+    // Converts XML content from a Reader into a JSONObject, transforming all keys using the provided keyTransformer function.
+    public static JSONObject toJSONObject(Reader reader, Function<String, String> keyTransformer) throws JSONException {
+        XMLTokener x = new XMLTokener(reader); // Initialize XMLTokener to parse the XML stream
+        JSONObject jo = new JSONObject(); // Final result container
+
+        // Loop through the XML input
+        while (x.more()) {
+            x.skipPast("<"); // Skip ahead to the next start tag
+            parse(x, jo, null, keyTransformer); // Parse each XML element recursively
+        }
+
+        return jo; // Return the constructed JSON object
+    }
+
+    // Parses a single XML element (tag), including its attributes and children, and adds it to the given context object.
+    // keyTransformer is applied to tag names and attribute keys.
+    private static boolean parse(XMLTokener x, JSONObject context, String name, Function<String, String> keyTransformer) throws JSONException {
+        // Read the tag name
+        Object token = x.nextToken();
+        String tagName = token.toString();
+        String transformedTagName = keyTransformer.apply(tagName); // Apply transformation to the tag name
+
+        JSONObject jsonObject = new JSONObject(); // Object to hold this tag's data
+
+        // Parse tag attributes
+        while (true) {
+            token = x.nextToken();
+
+            // If we reach the end of the start tag (i.e., '>')
+            if (token instanceof Character && (Character) token == '>') {
+                break;
+            }
+            // If token is an attribute name
+            else if (token instanceof String) {
+                String attrName = (String) token;
+                x.nextToken(); // Skip '='
+                String attrValue = x.nextToken().toString(); // Read attribute value
+                jsonObject.put(keyTransformer.apply(attrName), XML.stringToValue(attrValue)); // Store transformed attribute
+            }
+        }
+
+        // Parse tag content and nested children
+        StringBuilder content = new StringBuilder();
+        while (true) {
+            token = x.nextContent();
+
+            if (token == null) break; // End of content
+
+            if (token instanceof String) {
+                content.append(token); // Append raw text content
+            }
+            else if (token.equals('<')) {
+                if (x.next() == '/') {
+                    x.nextToken(); // Read closing tag name
+                    x.next(); // Skip '>'
+                    break; // End of this tag
+                } else {
+                    x.back(); // Go back one step to reprocess this new tag
+                    parse(x, jsonObject, null, keyTransformer); // Recursively parse the nested tag
+                }
+            }
+        }
+
+        // If the tag had text content, add it under the "content" key
+        if (content.length() > 0) {
+            jsonObject.put("content", XML.stringToValue(content.toString()));
+        }
+
+        // Add the parsed element into the parent context using the transformed tag name
+        context.accumulate(transformedTagName, jsonObject);
+
+        return true;
+    }
 }
