@@ -21,17 +21,21 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.json.*;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 
 
 /**
  * Tests for JSON-Java XML.java
  * Note: noSpace() will be tested by JSONMLTest
  */
+@RunWith(Enclosed.class)
 public class XMLTest {
     /**
      * JUnit supports temporary files and folders that are cleaned up after the test.
@@ -1515,9 +1519,103 @@ public class XMLTest {
         assertNotEquals(new JSONObject(unexpected).toString(), actualResult.toString());
     }
 
+    // Milestone 3
+    public static class XMLKeyTransformTest {
+        @Test
+        public void testKeyPrefixTransformation() {
+            String xml = "<foo><bar>value</bar></foo>";
+            Function<String, String> transformer = key -> "swe262_" + key;
 
+            JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+            assertTrue(result.has("swe262_foo"));
+            assertTrue(result.getJSONObject("swe262_foo").has("swe262_bar"));
+            assertEquals("value", result.getJSONObject("swe262_foo").getJSONObject("swe262_bar").get("content"));
+        }
+
+        @Test
+        public void testKeyReverseTransformation() {
+            String xml = "<abc><xyz>1</xyz></abc>";
+            Function<String, String> transformer = key -> new StringBuilder(key).reverse().toString();
+
+            JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+            assertTrue(result.has("cba"));
+            assertTrue(result.getJSONObject("cba").has("zyx"));
+            assertEquals(1, result.getJSONObject("cba").getJSONObject("zyx").get("content"));        }
+    }
+
+     /**
+     * Test that all XML keys are transformed by adding a prefix (e.g., "name" -> "swe262_name").
+     * Verifies basic key transformation with simple key-value pairs.
+     */
+    @Test
+    public void testSimpleKeyPrefixTransform() {
+        String xml = "<person><name>Tom</name><age>25</age></person>";
+
+        Function<String, String> transformer = key -> "swe262_" + key;
+
+        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+
+        assertTrue(result.has("swe262_person"));
+        JSONObject person = result.getJSONObject("swe262_person");
+        assertEquals("Tom", person.get("swe262_name"));
+        assertEquals(25, person.getInt("swe262_age"));
+    }
+
+    /**
+     * Test that all XML keys are reversed (e.g., "foo" -> "oof").
+     * Verifies that transformation works correctly on multiple keys.
+     */
+    @Test
+    public void testKeyReverseTransform() {
+        String xml = "<data><foo>bar</foo><hello>world</hello></data>";
+
+        Function<String, String> transformer = key -> new StringBuilder(key).reverse().toString();
+
+        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+
+        assertTrue(result.has("atad")); // reversed "data"
+        JSONObject data = result.getJSONObject("atad");
+        assertEquals("bar", data.get("oof"));      // reversed "foo"
+        assertEquals("world", data.get("olleh"));  // reversed "hello"
+    }
+
+    /**
+     * Test with an identity key transformer (i.e., no transformation).
+     * Ensures the method behaves exactly like the original toJSONObject(reader) method.
+     */
+    @Test
+    public void testIdentityTransform() {
+        String xml = "<item><id>123</id><value>abc</value></item>";
+
+        Function<String, String> transformer = Function.identity(); // no change
+
+        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+
+        assertTrue(result.has("item"));
+        JSONObject item = result.getJSONObject("item");
+        assertEquals("123", item.get("id").toString());
+        assertEquals("abc", item.get("value"));
+    }
+
+    /**
+     * Test transformation on nested XML elements with uppercased and prefixed keys.
+     * Ensures that transformations are applied recursively on nested elements.
+     */
+    @Test
+    public void testNestedTransform() {
+        String xml = "<catalog><book><title>Clean Code</title></book></catalog>";
+
+        Function<String, String> transformer = key -> "X_" + key.toUpperCase();
+
+        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+
+        assertTrue(result.has("X_CATALOG"));
+        JSONObject catalog = result.getJSONObject("X_CATALOG");
+
+        assertTrue(catalog.has("X_BOOK"));
+        JSONObject book = catalog.getJSONObject("X_BOOK");
+
+        assertEquals("Clean Code", book.get("X_TITLE"));
+    }
 
 }
-
-
-
