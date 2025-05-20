@@ -13,6 +13,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.function.Function;
+
+
 
 /**
  * This provides static methods to convert an XML text into a JSONObject, and to
@@ -1201,7 +1206,7 @@ public class XML {
 
     // Milestone 3:
     // Converts XML content from a Reader into a JSONObject, transforming all keys using the provided keyTransformer function.
-    public static JSONObject toJSONObject(Reader reader, Function<String, String> keyTransformer) throws JSONException {
+    public static JSONObject toJSONObjectWithKeyTransform(Reader reader, Function<String, String> keyTransformer) throws JSONException {
         XMLTokener x = new XMLTokener(reader); // Initialize XMLTokener to parse the XML stream
         JSONObject jo = new JSONObject(); // Final result container
 
@@ -1273,4 +1278,61 @@ public class XML {
 
         return true;
     }
+
+    // Milestone 4
+    // Defining the JSONNode Class
+    public static class JSONNode {
+        private final String path;
+        private final Object value;
+
+        public JSONNode(String path, Object value) {
+            this.path = path;
+            this.value = value;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return "JSONNode{path='" + path + "', value=" + value + '}';
+        }
+    }
+
+    // New toStream(JSONObject)
+    public static Stream<JSONNode> toStream(JSONObject jsonObject) {
+    return streamFromObject(jsonObject, "");
+    }
+
+    // Implement streamFromObject() recursive expansion logic
+    private static Stream<JSONNode> streamFromObject(Object current, String currentPath) {
+    List<JSONNode> result = new ArrayList<>();
+
+    if (current instanceof JSONObject) {
+        JSONObject json = (JSONObject) current;
+        for (String key : json.keySet()) {
+            Object value = json.get(key);
+            String newPath = currentPath + "/" + key;
+            result.add(new JSONNode(newPath, value));
+            result.addAll(streamFromObject(value, newPath).toList()); // Recursively process child nodes
+        }
+    } else if (current instanceof JSONArray) {
+        JSONArray array = (JSONArray) current;
+        for (int i = 0; i < array.length(); i++) {
+            Object element = array.get(i);
+            String newPath = currentPath + "[" + i + "]";
+            result.add(new JSONNode(newPath, element));
+            result.addAll(streamFromObject(element, newPath).toList());
+        }
+    }
+
+    return result.stream();
+}
+
+
 }

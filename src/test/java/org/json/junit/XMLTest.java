@@ -30,6 +30,13 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
+// Import for M4 dummy test
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.json.JSONObject;
+import org.json.XML;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Tests for JSON-Java XML.java
@@ -1526,7 +1533,7 @@ public class XMLTest {
             String xml = "<foo><bar>value</bar></foo>";
             Function<String, String> transformer = key -> "swe262_" + key;
 
-            JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+            JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
             assertTrue(result.has("swe262_foo"));
             assertTrue(result.getJSONObject("swe262_foo").has("swe262_bar"));
             assertEquals("value", result.getJSONObject("swe262_foo").getJSONObject("swe262_bar").get("content"));
@@ -1537,7 +1544,7 @@ public class XMLTest {
             String xml = "<abc><xyz>1</xyz></abc>";
             Function<String, String> transformer = key -> new StringBuilder(key).reverse().toString();
 
-            JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+            JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
             assertTrue(result.has("cba"));
             assertTrue(result.getJSONObject("cba").has("zyx"));
             assertEquals(1, result.getJSONObject("cba").getJSONObject("zyx").get("content"));        }
@@ -1553,7 +1560,7 @@ public class XMLTest {
 
         Function<String, String> transformer = key -> "swe262_" + key;
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("swe262_person"));
         JSONObject person = result.getJSONObject("swe262_person");
@@ -1571,7 +1578,7 @@ public class XMLTest {
 
         Function<String, String> transformer = key -> new StringBuilder(key).reverse().toString();
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("atad")); // reversed "data"
         JSONObject data = result.getJSONObject("atad");
@@ -1589,7 +1596,7 @@ public class XMLTest {
 
         Function<String, String> transformer = Function.identity(); // no change
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("item"));
         JSONObject item = result.getJSONObject("item");
@@ -1607,7 +1614,7 @@ public class XMLTest {
 
         Function<String, String> transformer = key -> "X_" + key.toUpperCase();
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("X_CATALOG"));
         JSONObject catalog = result.getJSONObject("X_CATALOG");
@@ -1617,5 +1624,20 @@ public class XMLTest {
 
         assertEquals("Clean Code", book.get("X_TITLE"));
     }
+
+
+    // Milestone 4 dummy test
+    @Test
+    public void testToStreamSimpleJSONObject() {
+    String xml = "<book><title>Refactoring</title><author>Martin Fowler</author></book>";
+    JSONObject jsonObject = XML.toJSONObject(xml);
+    List<XML.JSONNode> nodes = XML.toStream(jsonObject).collect(Collectors.toList());
+    assertEquals(3, nodes.size());
+
+    assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book/title") && n.getValue().equals("Refactoring")));
+    assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book/author") && n.getValue().equals("Martin Fowler")));
+    assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book") && n.getValue() instanceof JSONObject));
+}
+
 
 }
