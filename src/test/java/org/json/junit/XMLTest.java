@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
  * Tests for JSON-Java XML.java
  * Note: noSpace() will be tested by JSONMLTest
  */
-@RunWith(Enclosed.class)
 public class XMLTest {
     /**
      * JUnit supports temporary files and folders that are cleaned up after the test.
@@ -1626,18 +1625,95 @@ public class XMLTest {
     }
 
 
-    // Milestone 4 dummy test
+    // Milestone 4 test
+    /**
+     * Tests whether XML.toStream correctly converts a simple XML structure into a stream of JSONNodes.
+     * Asserts:
+     * - The stream contains exactly 3 nodes.
+     * - One node corresponds to /book/title with value "Refactoring".
+     * - One node corresponds to /book/author with value "Martin Fowler".
+     * - One node corresponds to /book which is a JSONObject.
+     */
     @Test
     public void testToStreamSimpleJSONObject() {
-    String xml = "<book><title>Refactoring</title><author>Martin Fowler</author></book>";
-    JSONObject jsonObject = XML.toJSONObject(xml);
-    List<XML.JSONNode> nodes = XML.toStream(jsonObject).collect(Collectors.toList());
-    assertEquals(3, nodes.size());
+        String xml = "<book><title>Refactoring</title><author>Martin Fowler</author></book>";
+        JSONObject jsonObject = XML.toJSONObject(xml);
+        List<XML.JSONNode> nodes = XML.toStream(jsonObject).collect(Collectors.toList());
+        assertEquals(3, nodes.size());
 
-    assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book/title") && n.getValue().equals("Refactoring")));
-    assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book/author") && n.getValue().equals("Martin Fowler")));
-    assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book") && n.getValue() instanceof JSONObject));
-}
+        assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book/title") && n.getValue().equals("Refactoring")));
+        assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book/author") && n.getValue().equals("Martin Fowler")));
+        assertTrue(nodes.stream().anyMatch(n -> n.getPath().equals("/book") && n.getValue() instanceof JSONObject));
+    }
+
+    /**
+     * Tests whether XML.toStream can filter and extract all title elements in a nested XML structure.
+     * Asserts:
+     * - The collected titles are exactly ["AAA", "BBB"].
+     */
+    @Test
+    public void testToStream_TitleExtraction() {
+        String xml = "<Books><book><title>AAA</title><author>ASmith</author></book>"
+                + "<book><title>BBB</title><author>BSmith</author></book></Books>";
+        JSONObject json = XML.toJSONObject(xml);
+
+        List<String> titles = XML.toStream(json)
+                .filter(node -> node.getPath().endsWith("/title"))
+                .map(node -> node.getValue().toString())
+                .collect(Collectors.toList());
+
+        assertEquals(List.of("AAA", "BBB"), titles);
+    }
+
+    /**
+     * Tests whether all expected paths are present in the stream from a nested XML.
+     * Asserts:
+     * - Paths like /Person/name and /Person/age are present.
+     * - There is at least one indexed path (i.e., path with [0] or [1]) indicating array elements.
+     */
+    @Test
+    public void testToStream_AllPaths() {
+        String xml = "<Person><name>John</name><age>30</age><skills><skill>Java</skill><skill>Python</skill></skills></Person>";
+        JSONObject json = XML.toJSONObject(xml);
+
+        List<String> paths = XML.toStream(json)
+                .map(XML.JSONNode::getPath)
+                .collect(Collectors.toList());
+
+        assertTrue(paths.contains("/Person/name") || paths.contains("/name"));
+        assertTrue(paths.contains("/Person/age") || paths.contains("/age"));
+        assertTrue(paths.stream().anyMatch(p -> p.contains("[0]") || p.contains("[1]"))); // array case
+    }
+
+    /**
+     * Tests whether the stream correctly handles repeated elements (i.e., arrays in XML).
+     * Asserts:
+     * - Extracted values of all indexed paths match the expected list ["A", "B", "C"].
+     */
+    @Test
+    public void testToStream_JSONArrayHandling() {
+        String xml = "<List><item>A</item><item>B</item><item>C</item></List>";
+        JSONObject json = XML.toJSONObject(xml);
+
+        List<String> items = XML.toStream(json)
+                .filter(node -> node.getPath().contains("["))
+                .map(node -> node.getValue().toString())
+                .collect(Collectors.toList());
+
+        assertEquals(List.of("A", "B", "C"), items);
+    }
+
+    /**
+     * Tests that an empty JSONObject produces an empty stream.
+     * Asserts:
+     * - The count of nodes in the stream is 0.
+     */
+    @Test
+    public void testToStream_EmptyObject() {
+        JSONObject empty = new JSONObject();
+        long count = XML.toStream(empty).count();
+        assertEquals(0, count);
+    }
 
 
 }
