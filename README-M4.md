@@ -8,7 +8,7 @@ Cherine Cho ([cherinec@uci.edu](mailto:cherinec@uci.edu))
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 Milestone 4 builds upon the repository used in previous milestones.
 
@@ -33,19 +33,19 @@ mvn test -Dtest="org.json.junit.XMLTest"
 
 ---
 
-## 📌 New Methods in `XML.java`
+## New Methods in `XML.java`
 
-### ✅ 1. `public static Stream<JSONNode> toStream(JSONObject jsonObject)`
+### 1. `public static Stream<JSONNode> toStream(JSONObject jsonObject)`
 
 This method converts a `JSONObject` into a `Stream<JSONNode>`, where each `JSONNode` represents an element from the tree.
 
-### ✅ 2. `private static Stream<JSONNode> streamFromObject(Object current, String currentPath)`
+### 2. `private static Stream<JSONNode> streamFromObject(Object current, String currentPath)`
 
 This recursive helper method traverses a `JSONObject` or `JSONArray` and collects all nodes with their corresponding JSONPointer-like paths.
 
 ---
 
-### 🧱 New Class: `JSONNode`
+### New Class: `JSONNode`
 
 ```java
 public static class JSONNode {
@@ -74,7 +74,7 @@ Each `JSONNode` holds:
 
 ---
 
-## 💡 Purpose
+## Purpose
 
 This functionality enables client code to:
 
@@ -84,25 +84,53 @@ This functionality enables client code to:
 
 ---
 
-## 🧪 Test Cases
+## Test Coverage
 
-Test cases are added in `XMLTest.java` and ensure the stream includes correct paths and values.  
+Unit tests for the `XML.toStream()` functionality are implemented in `XMLTest.java`. These tests ensure correctness of path construction, value extraction, and edge case handling.
+
+### **Included Test Cases**
+
+1. **Simple Object Traversal**
+
+   - Confirms stream contains 3 nodes for a flat XML: /book, /book/title, /book/author.
+
+     
+
+2. **Title Extraction from Nested Structure**
+
+   - Filters all /title nodes in a nested structure and checks values: ["AAA", "BBB"].
+
+   
+
+3. **Path Presence in Deep Structures**
+
+   - Verifies that all expected paths like /Person/name, /Person/age, and indexed array paths like [0], [1] exist.
+
+   
+
+4. **Handling of Repeated Elements / Arrays**
+
+   - Asserts values at all indexed paths in arrays are extracted properly: ["A", "B", "C"].
+
+   
+
+5. **Empty Object Handling**
+
+   - Checks that an empty JSONObject results in an empty stream (count is 0).
 
 
 ---
 
-## 📈 Performance Commentary
+## Performance Commentary
 
-### ✅ Benefits of `toStream()`:
+### Benefits of `toStream()`:
 
 - **Lazy processing**: Stream operations avoid eagerly building full intermediate data structures.
 - **Scalable**: Allows efficient handling of large JSON trees without deep recursion logic in client code.
 - **Composable**: Integrates smoothly with Java's functional constructs (`filter`, `map`, `collect`, etc.).
 - **Clean code**: Reduces boilerplate by removing the need for manual traversal logic.
 
-### ⚠️ Considerations:
+### Considerations:
 
 - Still traverses the entire JSON tree at least once internally.
 - Currently builds an `ArrayList` before streaming — future optimizations could improve memory usage by generating stream elements directly.
-
----
