@@ -1547,10 +1547,11 @@ public class XMLTest {
             JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
             assertTrue(result.has("cba"));
             assertTrue(result.getJSONObject("cba").has("zyx"));
-            assertEquals(1, result.getJSONObject("cba").getJSONObject("zyx").get("content"));        }
+            assertEquals(1, result.getJSONObject("cba").getJSONObject("zyx").get("content"));
+        }
     }
 
-     /**
+    /**
      * Test that all XML keys are transformed by adding a prefix (e.g., "name" -> "swe262_name").
      * Verifies basic key transformation with simple key-value pairs.
      */
@@ -1564,8 +1565,8 @@ public class XMLTest {
 
         assertTrue(result.has("swe262_person"));
         JSONObject person = result.getJSONObject("swe262_person");
-        assertEquals("Tom", person.get("swe262_name"));
-        assertEquals(25, person.getInt("swe262_age"));
+        assertEquals("Tom", person.getJSONObject("swe262_name").get("content"));
+        assertEquals(25, person.getJSONObject("swe262_age").get("content"));
     }
 
     /**
@@ -1582,8 +1583,8 @@ public class XMLTest {
 
         assertTrue(result.has("atad")); // reversed "data"
         JSONObject data = result.getJSONObject("atad");
-        assertEquals("bar", data.get("oof"));      // reversed "foo"
-        assertEquals("world", data.get("olleh"));  // reversed "hello"
+        assertEquals("bar", data.getJSONObject("oof").get("content"));      // reversed "foo"
+        assertEquals("world", data.getJSONObject("olleh").get("content"));  // reversed "hello"
     }
 
     /**
@@ -1600,8 +1601,8 @@ public class XMLTest {
 
         assertTrue(result.has("item"));
         JSONObject item = result.getJSONObject("item");
-        assertEquals("123", item.get("id").toString());
-        assertEquals("abc", item.get("value"));
+        assertEquals("123", item.getJSONObject("id").get("content").toString());
+        assertEquals("abc", item.getJSONObject("value").get("content"));
     }
 
     /**
@@ -1622,7 +1623,7 @@ public class XMLTest {
         assertTrue(catalog.has("X_BOOK"));
         JSONObject book = catalog.getJSONObject("X_BOOK");
 
-        assertEquals("Clean Code", book.get("X_TITLE"));
+        assertEquals("Clean Code", book.getJSONObject("X_TITLE").get("content"));
     }
 
 
