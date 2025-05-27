@@ -1525,7 +1525,8 @@ public class XMLTest {
         assertNotEquals(new JSONObject(unexpected).toString(), actualResult.toString());
     }
 
-    // Milestone 3
+
+     // Milestone 3
     public static class XMLKeyTransformTest {
         @Test
         public void testKeyPrefixTransformation() {
