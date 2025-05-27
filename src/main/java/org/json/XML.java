@@ -12,6 +12,7 @@ import java.util.Iterator;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.function.Function;
 
 
 /**
@@ -1199,9 +1200,9 @@ public class XML {
         return result;
     }
 
-    // Milestone 3:
+        // Milestone 3:
     // Converts XML content from a Reader into a JSONObject, transforming all keys using the provided keyTransformer function.
-    public static JSONObject toJSONObject(Reader reader, Function<String, String> keyTransformer) throws JSONException {
+    public static JSONObject toJSONObjectWithKeyTransform(Reader reader, Function<String, String> keyTransformer) throws JSONException {
         XMLTokener x = new XMLTokener(reader); // Initialize XMLTokener to parse the XML stream
         JSONObject jo = new JSONObject(); // Final result container
 

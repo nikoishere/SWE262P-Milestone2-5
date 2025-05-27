@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
  * Tests for JSON-Java XML.java
  * Note: noSpace() will be tested by JSONMLTest
  */
-@RunWith(Enclosed.class)
 public class XMLTest {
     /**
      * JUnit supports temporary files and folders that are cleaned up after the test.
@@ -1519,14 +1518,15 @@ public class XMLTest {
         assertNotEquals(new JSONObject(unexpected).toString(), actualResult.toString());
     }
 
-    // Milestone 3
+
+     // Milestone 3
     public static class XMLKeyTransformTest {
         @Test
         public void testKeyPrefixTransformation() {
             String xml = "<foo><bar>value</bar></foo>";
             Function<String, String> transformer = key -> "swe262_" + key;
 
-            JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+            JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
             assertTrue(result.has("swe262_foo"));
             assertTrue(result.getJSONObject("swe262_foo").has("swe262_bar"));
             assertEquals("value", result.getJSONObject("swe262_foo").getJSONObject("swe262_bar").get("content"));
@@ -1537,13 +1537,14 @@ public class XMLTest {
             String xml = "<abc><xyz>1</xyz></abc>";
             Function<String, String> transformer = key -> new StringBuilder(key).reverse().toString();
 
-            JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+            JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
             assertTrue(result.has("cba"));
             assertTrue(result.getJSONObject("cba").has("zyx"));
-            assertEquals(1, result.getJSONObject("cba").getJSONObject("zyx").get("content"));        }
+            assertEquals(1, result.getJSONObject("cba").getJSONObject("zyx").get("content"));
+        }
     }
 
-     /**
+    /**
      * Test that all XML keys are transformed by adding a prefix (e.g., "name" -> "swe262_name").
      * Verifies basic key transformation with simple key-value pairs.
      */
@@ -1553,12 +1554,12 @@ public class XMLTest {
 
         Function<String, String> transformer = key -> "swe262_" + key;
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("swe262_person"));
         JSONObject person = result.getJSONObject("swe262_person");
-        assertEquals("Tom", person.get("swe262_name"));
-        assertEquals(25, person.getInt("swe262_age"));
+        assertEquals("Tom", person.getJSONObject("swe262_name").get("content"));
+        assertEquals(25, person.getJSONObject("swe262_age").get("content"));
     }
 
     /**
@@ -1571,12 +1572,12 @@ public class XMLTest {
 
         Function<String, String> transformer = key -> new StringBuilder(key).reverse().toString();
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("atad")); // reversed "data"
         JSONObject data = result.getJSONObject("atad");
-        assertEquals("bar", data.get("oof"));      // reversed "foo"
-        assertEquals("world", data.get("olleh"));  // reversed "hello"
+        assertEquals("bar", data.getJSONObject("oof").get("content"));      // reversed "foo"
+        assertEquals("world", data.getJSONObject("olleh").get("content"));  // reversed "hello"
     }
 
     /**
@@ -1589,12 +1590,12 @@ public class XMLTest {
 
         Function<String, String> transformer = Function.identity(); // no change
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("item"));
         JSONObject item = result.getJSONObject("item");
-        assertEquals("123", item.get("id").toString());
-        assertEquals("abc", item.get("value"));
+        assertEquals("123", item.getJSONObject("id").get("content").toString());
+        assertEquals("abc", item.getJSONObject("value").get("content"));
     }
 
     /**
@@ -1607,7 +1608,7 @@ public class XMLTest {
 
         Function<String, String> transformer = key -> "X_" + key.toUpperCase();
 
-        JSONObject result = XML.toJSONObject(new StringReader(xml), transformer);
+        JSONObject result = XML.toJSONObjectWithKeyTransform(new StringReader(xml), transformer);
 
         assertTrue(result.has("X_CATALOG"));
         JSONObject catalog = result.getJSONObject("X_CATALOG");
@@ -1615,7 +1616,7 @@ public class XMLTest {
         assertTrue(catalog.has("X_BOOK"));
         JSONObject book = catalog.getJSONObject("X_BOOK");
 
-        assertEquals("Clean Code", book.get("X_TITLE"));
+        assertEquals("Clean Code", book.getJSONObject("X_TITLE").get("content"));
     }
 
 }
