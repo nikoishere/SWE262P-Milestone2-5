@@ -17,7 +17,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.function.Function;
-
+// Import for Milestone 5
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 
 /**
@@ -1335,5 +1337,35 @@ public class XML {
     return result.stream();
 }
 
+    /**
+     * Milestone 5: Asynchronous XML-to-JSON conversion using key transformation.
+     *
+     * This method converts XML input from a Reader to JSONObject in a non-blocking way.
+     * On success, the onSuccess callback is invoked with the resulting JSONObject.
+     * On failure, the onFailure callback is invoked with the encountered Exception.
+     *
+     * @param reader           the XML input source
+     * @param keyTransformer   function to transform each key name
+     * @param onSuccess        callback invoked with JSONObject result
+     * @param onFailure        callback invoked with Exception if error occurs
+     */
+    public static void toJSONObjectAsync(Reader reader,
+                                         Function<String, String> keyTransformer,
+                                         Consumer<JSONObject> onSuccess,
+                                         Consumer<Exception> onFailure) {
+        CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return toJSONObjectWithKeyTransform(reader, keyTransformer);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .thenAccept(onSuccess)
+                .exceptionally(e -> {
+                    onFailure.accept((Exception) e.getCause());
+                    return null;
+                });
+    }
 
 }

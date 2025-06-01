@@ -24,7 +24,7 @@ mvn clean
 mvn compile
 mvn test
 ```
-
+[README-M4.md](README-M4.md)
 To run only tests related to `XMLTest`:
 
 ```bash

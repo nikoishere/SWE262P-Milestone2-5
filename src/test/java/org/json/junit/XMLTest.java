@@ -38,6 +38,10 @@ import org.json.XML;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// Import for M5 dummy test
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Tests for JSON-Java XML.java
  * Note: noSpace() will be tested by JSONMLTest
@@ -1717,5 +1721,57 @@ public class XMLTest {
         assertEquals(0, count);
     }
 
+    // Milestone 5 dummy test
+    /**
+     * Test asynchronous XML parsing with a nested book list.
+     *
+     * This test parses a <library> element containing two <book> entries,
+     * each with <title> and <author> fields.
+     *
+     * It verifies:
+     * - The callback executes successfully after asynchronous parsing
+     * - The parsed JSONObject correctly reflects the nested structure
+     * - All field values (titles and authors) match expected values
+     */
+    @Test
+    public void testAsyncBookListXml() throws Exception {
+        String xml =
+                "<library>" +
+                        "<book>" +
+                        "<title>Effective Java</title>" +
+                        "<author>Joshua Bloch</author>" +
+                        "</book>" +
+                        "<book>" +
+                        "<title>Clean Code</title>" +
+                        "<author>Robert C. Martin</author>" +
+                        "</book>" +
+                        "</library>";
 
+        Reader reader = new StringReader(xml);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        XML.toJSONObjectAsync(
+                reader,
+                key -> key.toLowerCase(),  // Convert XML tags to lowercase
+                json -> {
+                    try {
+                        JSONArray books = json.getJSONObject("library").getJSONArray("book");
+
+                        JSONObject book1 = books.getJSONObject(0);
+                        assertEquals("Effective Java", book1.getJSONObject("title").get("content"));
+                        assertEquals("Joshua Bloch", book1.getJSONObject("author").get("content"));
+
+                        JSONObject book2 = books.getJSONObject(1);
+                        assertEquals("Clean Code", book2.getJSONObject("title").get("content"));
+                        assertEquals("Robert C. Martin", book2.getJSONObject("author").get("content"));
+                    } catch (Exception e) {
+                        fail("Unexpected JSON structure: " + e.getMessage());
+                    }
+                    latch.countDown();
+                },
+                e -> fail("Async parsing failed unexpectedly: " + e.getMessage())
+        );
+
+        assertTrue("Callback did not complete in time", latch.await(2, TimeUnit.SECONDS));
+    }
 }
