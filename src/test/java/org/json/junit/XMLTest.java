@@ -30,7 +30,7 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
-// Import for M4 dummy test
+// Import for M4
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.json.JSONObject;
@@ -38,9 +38,11 @@ import org.json.XML;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Import for M5 dummy test
+// Import for M5
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
 
 /**
  * Tests for JSON-Java XML.java
@@ -1529,8 +1531,7 @@ public class XMLTest {
         assertNotEquals(new JSONObject(unexpected).toString(), actualResult.toString());
     }
 
-
-     // Milestone 3
+    // Milestone 3
     public static class XMLKeyTransformTest {
         @Test
         public void testKeyPrefixTransformation() {
@@ -1721,57 +1722,87 @@ public class XMLTest {
         assertEquals(0, count);
     }
 
-    // Milestone 5 dummy test
+
     /**
-     * Test asynchronous XML parsing with a nested book list.
-     *
-     * This test parses a <library> element containing two <book> entries,
-     * each with <title> and <author> fields.
-     *
-     * It verifies:
-     * - The callback executes successfully after asynchronous parsing
-     * - The parsed JSONObject correctly reflects the nested structure
-     * - All field values (titles and authors) match expected values
+     * ===== Test Cases For Milestone 5 =====
+     * Tests for: public static void toJSONObject(Reader reader, Consumer<JSONObject> onSuccess, Consumer<Exception> onError)
+     */
+
+    /**
+     * Test that the async method correctly calls the success callback when given valid XML.
      */
     @Test
-    public void testAsyncBookListXml() throws Exception {
-        String xml =
-                "<library>" +
-                        "<book>" +
-                        "<title>Effective Java</title>" +
-                        "<author>Joshua Bloch</author>" +
-                        "</book>" +
-                        "<book>" +
-                        "<title>Clean Code</title>" +
-                        "<author>Robert C. Martin</author>" +
-                        "</book>" +
-                        "</library>";
-
-        Reader reader = new StringReader(xml);
+    public void testAsyncParsingSuccess() throws InterruptedException {
+        String xml = "<book><title>Async Programming</title></book>";
         CountDownLatch latch = new CountDownLatch(1);
+        final JSONObject[] result = new JSONObject[1];
 
         XML.toJSONObjectAsync(
-                reader,
-                key -> key.toLowerCase(),  // Convert XML tags to lowercase
-                json -> {
-                    try {
-                        JSONArray books = json.getJSONObject("library").getJSONArray("book");
-
-                        JSONObject book1 = books.getJSONObject(0);
-                        assertEquals("Effective Java", book1.getJSONObject("title").get("content"));
-                        assertEquals("Joshua Bloch", book1.getJSONObject("author").get("content"));
-
-                        JSONObject book2 = books.getJSONObject(1);
-                        assertEquals("Clean Code", book2.getJSONObject("title").get("content"));
-                        assertEquals("Robert C. Martin", book2.getJSONObject("author").get("content"));
-                    } catch (Exception e) {
-                        fail("Unexpected JSON structure: " + e.getMessage());
-                    }
-                    latch.countDown();
-                },
-                e -> fail("Async parsing failed unexpectedly: " + e.getMessage())
+            new StringReader(xml),
+            Function.identity(),
+            json -> {
+                result[0] = json;
+                latch.countDown();
+            },
+            error -> fail("Should not trigger error callback on valid XML.")
         );
 
-        assertTrue("Callback did not complete in time", latch.await(2, TimeUnit.SECONDS));
+        assertTrue("Async success callback not invoked in time.", latch.await(2, TimeUnit.SECONDS));
+        assertNotNull("Parsed JSONObject should not be null.", result[0]);
+        assertEquals("Async Programming", result[0].getJSONObject("book").getJSONObject("title").get("content"));
     }
+
+    /**
+     * Test that the async method correctly calls the error callback when given invalid XML.
+     */
+    @Test
+    public void testAsyncParsingFailure() throws InterruptedException {
+        String invalidXml = "<book><title>Oops</book>";
+        CountDownLatch latch = new CountDownLatch(1);
+        final Exception[] caught = new Exception[1];
+
+        XML.toJSONObjectAsync(
+            new StringReader(invalidXml),
+            Function.identity(),
+            json -> fail("Should not parse invalid XML successfully."),
+            error -> {
+                caught[0] = error;
+                latch.countDown();
+            }
+        );
+
+        assertTrue("Async error callback not invoked in time.", latch.await(2, TimeUnit.SECONDS));
+        assertNotNull("Exception should be caught in error callback.", caught[0]);
+    }
+
+    /**
+     * Test that a large XML input completes successfully and invokes the success callback.
+     */
+    @Test
+    public void testAsyncLargeXMLSuccess() throws InterruptedException {
+        StringBuilder xmlBuilder = new StringBuilder("<library>");
+        for (int i = 0; i < 500; i++) {
+            xmlBuilder.append("<book><title>Title ").append(i).append("</title></book>");
+        }
+        xmlBuilder.append("</library>");
+
+        CountDownLatch latch = new CountDownLatch(1);
+        final JSONObject[] result = new JSONObject[1];
+
+        XML.toJSONObjectAsync(
+            new StringReader(xmlBuilder.toString()),
+            Function.identity(),
+            json -> {
+                result[0] = json;
+                latch.countDown();
+            },
+            error -> fail("Should not fail on large valid XML.")
+        );
+
+        assertTrue("Async parsing for large XML did not complete in time.", latch.await(5, TimeUnit.SECONDS));
+        assertNotNull("Parsed large XML JSONObject should not be null.", result[0]);
+        assertTrue(result[0].has("library"));
+    }
+
+
 }

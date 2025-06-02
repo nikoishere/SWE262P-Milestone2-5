@@ -20,6 +20,8 @@ import java.util.function.Function;
 // Import for Milestone 5
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.concurrent.CompletionException;
+
 
 
 /**
@@ -1350,22 +1352,30 @@ public class XML {
      * @param onFailure        callback invoked with Exception if error occurs
      */
     public static void toJSONObjectAsync(Reader reader,
-                                         Function<String, String> keyTransformer,
-                                         Consumer<JSONObject> onSuccess,
-                                         Consumer<Exception> onFailure) {
-        CompletableFuture
-                .supplyAsync(() -> {
-                    try {
-                        return toJSONObjectWithKeyTransform(reader, keyTransformer);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .thenAccept(onSuccess)
-                .exceptionally(e -> {
-                    onFailure.accept((Exception) e.getCause());
-                    return null;
-                });
-    }
+                                     Function<String, String> keyTransformer,
+                                     Consumer<JSONObject> onSuccess,
+                                     Consumer<Exception> onFailure) {
+    CompletableFuture
+        .supplyAsync(() -> {
+            try {
+                return toJSONObjectWithKeyTransform(reader, keyTransformer);
+            } catch (Exception e) {
+                // Throw directly without wrapping to ensure that the exception type is not lost
+                throw new CompletionException(e);
+            }
+        })
+        .thenAccept(onSuccess)
+        .exceptionally(ex -> {
+            Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+            if (cause instanceof Exception) {
+                onFailure.accept((Exception) cause);
+            } else {
+                // Error or Throwable, and the test cannot be stuck
+                onFailure.accept(new Exception("Unknown error occurred", cause));
+            }
+            return null;
+        });
+}
+
 
 }
