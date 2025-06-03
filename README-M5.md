@@ -82,5 +82,169 @@ Unit tests for the `XML.toJSONObjectAsync` functionality are implemented in `XML
     }
   }
   ```
+
+### **Test 2: testAsyncParsingSuccess**
+
+- Verifies that the `toJSONObjectAsync` method correctly invokes the success callback when provided with valid XML input.
+
+  **Input XML:**
+  ```xml
+  <book>
+    <title>Async Programming</title>
+  </book>
+  ```
+
+  **Expected Output:**
+  ```json
+  {
+    "book": {
+      "title": {
+        "content": "Async Programming"
+      }
+    }
+  }
+  ```
+
+  **Key Points:**
+  - Ensures the success callback is triggered within the timeout period.
+  - Confirms the parsed `JSONObject` matches the expected structure.
+
+---
+
+### **Test 3: testAsyncParsingFailure**
+
+- Verifies that the `toJSONObjectAsync` method correctly invokes the error callback when provided with invalid XML input.
+
+  **Input XML:**
+  ```xml
+  <book><title>Oops</book>
+  ```
+
+  **Expected Behavior:**
+  - The error callback is triggered with an exception indicating the XML parsing failure.
+
+  **Key Points:**
+  - Ensures the error callback is invoked within the timeout period.
+  - Confirms the exception is properly caught and handled.
+
+---
+
+### **Test 4: testAsyncLargeXMLSuccess**
+
+- Tests the ability of the `toJSONObjectAsync` method to handle large XML inputs efficiently and correctly invoke the success callback.
+
+  **Input XML:**
+  ```xml
+  <library>
+    <book><title>Title 0</title></book>
+    <book><title>Title 1</title></book>
+    ...
+    <book><title>Title 499</title></book>
+  </library>
+  ```
+
+  **Expected Output:**
+  ```json
+  {
+    "library": {
+      "book": [
+        { "title": { "content": "Title 0" } },
+        { "title": { "content": "Title 1" } },
+        ...
+        { "title": { "content": "Title 499" } }
+      ]
+    }
+  }
+  ```
+
+  **Key Points:**
+  - Confirms the success callback is triggered within the timeout period.
+  - Validates the parsed `JSONObject` contains all 500 `<book>` entries.
+  - Demonstrates the method's ability to handle large-scale XML parsing without errors.
+
+---
+
+These additions provide a comprehensive explanation of the test cases you implemented for Milestone 5. You can copy and paste this content into the **Test Cases** section of your `README-M5.md` file.### **Test 2: testAsyncParsingSuccess**
+
+- Verifies that the `toJSONObjectAsync` method correctly invokes the success callback when provided with valid XML input.
+
+  **Input XML:**
+  ```xml
+  <book>
+    <title>Async Programming</title>
+  </book>
+  ```
+
+  **Expected Output:**
+  ```json
+  {
+    "book": {
+      "title": {
+        "content": "Async Programming"
+      }
+    }
+  }
+  ```
+
+  **Key Points:**
+  - Ensures the success callback is triggered within the timeout period.
+  - Confirms the parsed `JSONObject` matches the expected structure.
+
+---
+
+### **Test 3: testAsyncParsingFailure**
+
+- Verifies that the `toJSONObjectAsync` method correctly invokes the error callback when provided with invalid XML input.
+
+  **Input XML:**
+  ```xml
+  <book><title>Oops</book>
+  ```
+
+  **Expected Behavior:**
+  - The error callback is triggered with an exception indicating the XML parsing failure.
+
+  **Key Points:**
+  - Ensures the error callback is invoked within the timeout period.
+  - Confirms the exception is properly caught and handled.
+
+---
+
+### **Test 4: testAsyncLargeXMLSuccess**
+
+- Tests the ability of the `toJSONObjectAsync` method to handle large XML inputs efficiently and correctly invoke the success callback.
+
+  **Input XML:**
+  ```xml
+  <library>
+    <book><title>Title 0</title></book>
+    <book><title>Title 1</title></book>
+    ...
+    <book><title>Title 499</title></book>
+  </library>
+  ```
+
+  **Expected Output:**
+  ```json
+  {
+    "library": {
+      "book": [
+        { "title": { "content": "Title 0" } },
+        { "title": { "content": "Title 1" } },
+        ...
+        { "title": { "content": "Title 499" } }
+      ]
+    }
+  }
+  ```
+
+  **Key Points:**
+  - Confirms the success callback is triggered within the timeout period.
+  - Validates the parsed `JSONObject` contains all 500 `<book>` entries.
+  - Demonstrates the method's ability to handle large-scale XML parsing without errors.
+
+---
+
+These additions provide a comprehensive explanation of the test cases you implemented for Milestone 5. You can copy and paste this content into the **Test Cases** section of your `README-M5.md` file.
   
   
