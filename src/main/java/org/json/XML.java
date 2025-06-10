@@ -1070,44 +1070,41 @@ public class XML {
         XMLTokener tokener = new XMLTokener(reader);
 
         // Traverse the XML tokens
-        while (tokener.more()) {
-            tokener.skipPast("<");
-            if (!tokener.more()) break;
+        boolean foundTarget = false;
 
-            Object token = tokener.nextContent();
-            if (token instanceof String) {
-                String tag = (String) token;
+    while (tokener.more()) {
+        tokener.skipPast("<");
+        if (!tokener.more()) break;
 
-                // Ignore metadata and comments
-                if (tag.charAt(0) != '?' && tag.charAt(0) != '!') {
-                    // If still navigating to target depth
-                    if (depth < pathElements.length) {
-                        // Match opening tag
-                        if (tag.startsWith(pathElements[depth])) {
-                            closingTagReached = false;
-                            if (depth == pathElements.length - 1) {
-                                xmlFragments.add("<" + tag);
-                            }
-                            if (depth == 0) depth++;
+        Object token = tokener.nextContent();
+        if (token instanceof String) {
+            String tag = (String) token;
+
+            if (tag.charAt(0) != '?' && tag.charAt(0) != '!') {
+                if (depth < pathElements.length) {
+                    if (tag.startsWith(pathElements[depth])) {
+                        closingTagReached = false;
+                        if (depth == pathElements.length - 1) {
+                            xmlFragments.add("<" + tag);
+                            foundTarget = true;
                         }
-                        // Match closing tag
-                        else if (tag.startsWith("/") && tag.substring(1).startsWith(pathElements[depth])) {
-                            closingTagReached = true;
-                            if (depth == pathElements.length - 1) {
-                                xmlFragments.add("<" + tag);
-                            }
+                        if (depth == 0) depth++;
+                    } else if (tag.startsWith("/") && tag.substring(1).startsWith(pathElements[depth])) {
+                        closingTagReached = true;
+                        if (depth == pathElements.length - 1) {
+                            xmlFragments.add("<" + tag);
+                            break;
                         }
-                        // Intermediate nodes
-                        else {
-                            if (closingTagReached) depth++;
-                            if (depth == pathElements.length - 1) {
-                                xmlFragments.add("<" + tag);
-                            }
+                    } else {
+                        if (closingTagReached) depth++;
+                        if (depth == pathElements.length - 1) {
+                            xmlFragments.add("<" + tag);
                         }
                     }
                 }
             }
         }
+    }
 
         // Build partial XML from collected fragments
         StringBuilder xmlBuilder = new StringBuilder();
